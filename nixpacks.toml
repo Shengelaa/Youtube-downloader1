@@ -1,2 +1,2 @@
 [phases.setup]
-packages = ["python3"]
+packages = ["python3", "ffmpeg"]
