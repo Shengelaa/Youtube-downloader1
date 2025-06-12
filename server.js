@@ -13,7 +13,7 @@ app.get("/download", async (req, res) => {
 
   if (!url || !format) return res.status(400).send("Missing parameters");
 
-  // Validate supported formats
+
   const allowedFormats = ["mp3", "mp4"];
   if (!allowedFormats.includes(format))
     return res.status(400).send("Invalid format");
@@ -37,7 +37,7 @@ app.get("/download", async (req, res) => {
       });
     }
 
-    // Find the actual downloaded file (yt-dlp replaces placeholders)
+  
     const downloadedFiles = fs
       .readdirSync(__dirname)
       .filter((file) => file.startsWith(`download_`) && file.endsWith(format));
