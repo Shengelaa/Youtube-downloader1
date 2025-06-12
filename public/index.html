@@ -20,6 +20,7 @@
         align-items: center;
         padding: 20px;
       }
+
       .container {
         background: #1e1e1e;
         padding: 30px 25px;
@@ -28,14 +29,9 @@
         max-width: 400px;
         text-align: center;
         position: relative;
-
-        /* Base shadow for depth */
         box-shadow: 0 8px 24px rgb(0 0 0 / 0.3),
           0 0 10px 2px rgba(230, 57, 70, 0.6);
-
-        /* subtle neon color overlay */
         filter: drop-shadow(0 0 8px rgba(230, 57, 70, 0.7));
-
         animation: led-glow-enhanced 3s ease-in-out infinite alternate;
       }
 
@@ -63,23 +59,23 @@
         }
       }
 
-      h1 {
-        margin-bottom: 25px;
-        font-weight: 700;
-        font-size: 1.8rem;
-        color: #e63946; /* reddish */
-      }
+      h1,
       h3 {
         margin-bottom: 15px;
         font-weight: 700;
-        color: #e63946; /* reddish */
+        color: #e63946;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+        animation: text-led-glow 3s ease-in-out infinite alternate;
       }
 
       p {
         margin-bottom: 25px;
         font-weight: 600;
         font-size: 1rem;
-        color: #f28482; /* lighter reddish/pink */
+        color: #f28482;
       }
 
       form {
@@ -94,22 +90,19 @@
         font-size: 1rem;
         border: none;
         border-radius: 8px;
-        outline-offset: 2px;
-        outline-color: #e63946; 
         background: #292929;
         color: #f0f0f0;
         transition: background 0.3s ease;
+        outline-color: #e63946;
       }
 
       input[type="text"]:focus,
       select:focus {
         background: #3a3a3a;
       }
+
       button {
         padding: 12px 0;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
-          sans-serif;
         font-size: 1.1rem;
         font-weight: 900;
         border: none;
@@ -117,8 +110,6 @@
         background: #e63946;
         color: #ffffff;
         cursor: pointer;
-
-        /* subtle white glowing text */
         text-shadow: 0 0 2px rgba(255, 255, 255, 0.6),
           0 0 4px rgba(255, 255, 255, 0.4);
         transition: text-shadow 0.3s ease;
@@ -126,13 +117,11 @@
 
       button:hover,
       button:focus {
-        /* slightly stronger glow on hover */
         text-shadow: 0 0 4px rgba(255, 255, 255, 0.8),
           0 0 8px rgba(255, 255, 255, 0.6);
         outline: none;
       }
 
-      /* Responsive tweaks */
       @media (max-width: 480px) {
         .container {
           max-width: 90vw;
@@ -148,21 +137,44 @@
         }
       }
 
-      /* Glowing text animation */
       @keyframes text-led-glow {
         0%,
         100% {
           text-shadow: 0 0 2px #e63946, 0 0 4px #e63946, 0 0 6px #b22234;
-          color: #e63946; /* base red */
+          color: #e63946;
         }
         50% {
           text-shadow: 0 0 1px #e63946, 0 0 2px #b22234;
-          color: #d94a50; /* slightly dimmer red */
+          color: #d94a50;
         }
       }
 
-      h1 {
-        animation: text-led-glow 3s ease-in-out infinite alternate;
+      /* Spinner styles */
+      .spinner {
+        margin: 20px auto;
+        width: 40px;
+        height: 40px;
+        border: 5px solid #f28482;
+        border-top: 5px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      #loading {
+        display: none;
+        margin-top: 20px;
+      }
+
+      #loading p {
+        color: #f28482;
+        font-weight: bold;
+        font-size: 0.95rem;
       }
     </style>
   </head>
@@ -179,19 +191,37 @@
         </select>
         <button type="submit">Download File!!</button>
       </form>
+
+      <div id="loading">
+        <div class="spinner"></div>
+        <p>Preparing your download... Please wait!</p>
+      </div>
     </div>
 
     <script>
-      document
-        .getElementById("downloadForm")
-        .addEventListener("submit", function (e) {
-          e.preventDefault();
-          const url = document.getElementById("url").value;
-          const format = document.getElementById("format").value;
+      const form = document.getElementById("downloadForm");
+      const loading = document.getElementById("loading");
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const url = document.getElementById("url").value.trim();
+        const format = document.getElementById("format").value;
+
+        if (!url) return;
+
+        loading.style.display = "block";
+
+        setTimeout(() => {
           window.location.href = `/download?url=${encodeURIComponent(
             url
           )}&format=${format}`;
-        });
+
+          // Optional: hide loading after 10 seconds
+          setTimeout(() => {
+            loading.style.display = "none";
+          }, 8000);
+        }, 500);
+      });
     </script>
   </body>
 </html>
