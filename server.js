@@ -8,6 +8,15 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static("public"));
 
+const cookiesPath = path.join(__dirname, "youtube_cookies.txt");
+
+// On startup, write cookies file if env var exists
+if (process.env.YOUTUBE_COOKIES) {
+  fs.writeFileSync(cookiesPath, process.env.YOUTUBE_COOKIES);
+} else {
+  console.warn("YOUTUBE_COOKIES env var not set. YouTube downloads may fail.");
+}
+
 app.get("/download", async (req, res) => {
   const { url, format } = req.query;
 
@@ -28,11 +37,14 @@ app.get("/download", async (req, res) => {
         extractAudio: true,
         audioFormat: "mp3",
         output: outputTemplate,
+        // Pass cookies here
+        args: ["--cookies", cookiesPath],
       });
     } else {
       await ytdlp(url, {
-        format: "best",
+        format: "b", // use 'b' to avoid warning about 'best'
         output: outputTemplate,
+        args: ["--cookies", cookiesPath],
       });
     }
 
