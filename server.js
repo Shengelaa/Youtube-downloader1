@@ -13,31 +13,45 @@ app.get("/download", async (req, res) => {
 
   if (!url || !format) return res.status(400).send("Missing parameters");
 
-  const safeFilename = `download_${Date.now()}.${format}`;
-  const filePath = path.join(__dirname, safeFilename);
+  // Validate supported formats
+  const allowedFormats = ["mp3", "mp4"];
+  if (!allowedFormats.includes(format))
+    return res.status(400).send("Invalid format");
+
+  const outputTemplate = path.join(
+    __dirname,
+    `download_%(title)s_${Date.now()}.%(ext)s`
+  );
 
   try {
     if (format === "mp3") {
-      // Download and extract audio as mp3
       await ytdlp(url, {
         extractAudio: true,
         audioFormat: "mp3",
-        output: filePath,
+        output: outputTemplate,
       });
     } else {
-      // Download best video format
       await ytdlp(url, {
         format: "best",
-        output: filePath,
+        output: outputTemplate,
       });
     }
 
-    res.download(filePath, (err) => {
+    // Find the actual downloaded file (yt-dlp replaces placeholders)
+    const downloadedFiles = fs
+      .readdirSync(__dirname)
+      .filter((file) => file.startsWith(`download_`) && file.endsWith(format));
+    if (downloadedFiles.length === 0) {
+      return res.status(500).send("Download failed: file not found");
+    }
+    const downloadedFile = downloadedFiles[0];
+    const filePath = path.join(__dirname, downloadedFile);
+
+    res.download(filePath, downloadedFile, (err) => {
       if (err) {
         console.error("Download error:", err);
-        res.status(500).send("Download failed");
+        if (!res.headersSent) res.status(500).send("Download failed");
       }
-      // Delete file after sending
       fs.unlink(filePath, (unlinkErr) => {
         if (unlinkErr) console.error("Failed to delete file:", unlinkErr);
       });
