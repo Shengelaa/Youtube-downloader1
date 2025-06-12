@@ -10,9 +10,15 @@ app.use(express.static("public"));
 
 const cookiesPath = path.join(__dirname, "youtube_cookies.txt");
 
-// On startup, write cookies file if env var exists
+// On startup, write cookies file if env var exists (base64 decode it first)
 if (process.env.YOUTUBE_COOKIES) {
-  fs.writeFileSync(cookiesPath, process.env.YOUTUBE_COOKIES);
+  try {
+    const decodedCookies = Buffer.from(process.env.YOUTUBE_COOKIES, "base64").toString("utf-8");
+    fs.writeFileSync(cookiesPath, decodedCookies);
+    console.log("✅ Cookies file written successfully");
+  } catch (err) {
+    console.error("Failed to write cookies file:", err);
+  }
 } else {
   console.warn("YOUTUBE_COOKIES env var not set. YouTube downloads may fail.");
 }
@@ -37,7 +43,6 @@ app.get("/download", async (req, res) => {
         extractAudio: true,
         audioFormat: "mp3",
         output: outputTemplate,
-        // Pass cookies here
         args: ["--cookies", cookiesPath],
       });
     } else {
@@ -51,9 +56,11 @@ app.get("/download", async (req, res) => {
     const downloadedFiles = fs
       .readdirSync(__dirname)
       .filter((file) => file.startsWith(`download_`) && file.endsWith(format));
+
     if (downloadedFiles.length === 0) {
       return res.status(500).send("Download failed: file not found");
     }
+
     const downloadedFile = downloadedFiles[0];
     const filePath = path.join(__dirname, downloadedFile);
 
