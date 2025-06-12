@@ -43,13 +43,13 @@ app.get("/download", async (req, res) => {
         extractAudio: true,
         audioFormat: "mp3",
         output: outputTemplate,
-        args: ["--cookies", cookiesPath],
+        cookies: cookiesPath,  // <== Use this instead of args
       });
     } else {
       await ytdlp(url, {
         format: "b", // use 'b' to avoid warning about 'best'
         output: outputTemplate,
-        args: ["--cookies", cookiesPath],
+        cookies: cookiesPath,  // <== Use this instead of args
       });
     }
 
