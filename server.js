@@ -1,18 +1,12 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
-const os = require("os");
 const ytdlp = require("yt-dlp-exec");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static("public"));
-
-// Utility to generate a unique temp filename prefix per request
-function generateTempPrefix() {
-  return `download_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
-}
 
 app.get("/download", async (req, res) => {
   const { url, format } = req.query;
@@ -23,54 +17,42 @@ app.get("/download", async (req, res) => {
   if (!allowedFormats.includes(format))
     return res.status(400).send("Invalid format");
 
-  const tempDir = os.tmpdir();
-  const tempPrefix = generateTempPrefix();
-
-  // Template for output file (will save in temp dir)
-  const outputTemplate = path.join(tempDir, `${tempPrefix}.%(ext)s`);
+  const outputTemplate = path.join(
+    __dirname,
+    `download_%(title)s_${Date.now()}.%(ext)s`
+  );
 
   try {
-    // Build options object for yt-dlp
-    const options = {
-      output: outputTemplate,
-    };
-
     if (format === "mp3") {
-      options.extractAudio = true;
-      options.audioFormat = "mp3";
-      // To force best audio quality
-      options.audioQuality = 0;
-    } else if (format === "mp4") {
-      // For mp4, don’t specify format to allow yt-dlp merging best streams
-      // So no format option set here
+      await ytdlp(url, {
+        extractAudio: true,
+        audioFormat: "mp3",
+        output: outputTemplate,
+      });
+    } else {
+      await ytdlp(url, {
+        format: "best",
+        output: outputTemplate,
+      });
     }
 
-    // Run yt-dlp
-    await ytdlp(url, options);
-
-    // Find the downloaded file that matches the prefix
-    const files = fs.readdirSync(tempDir);
-    const matchedFiles = files.filter((f) => f.startsWith(tempPrefix));
-
-    if (matchedFiles.length === 0) {
+    const downloadedFiles = fs
+      .readdirSync(__dirname)
+      .filter((file) => file.startsWith(`download_`) && file.endsWith(format));
+    if (downloadedFiles.length === 0) {
       return res.status(500).send("Download failed: file not found");
     }
+    const downloadedFile = downloadedFiles[0];
+    const filePath = path.join(__dirname, downloadedFile);
 
-    // Usually only one file matches
-    const downloadedFile = matchedFiles[0];
-    const filePath = path.join(tempDir, downloadedFile);
-
-    // Send file as attachment to client
     res.download(filePath, downloadedFile, (err) => {
-      // Delete file after sending
-      fs.unlink(filePath, (unlinkErr) => {
-        if (unlinkErr) console.error("Failed to delete temp file:", unlinkErr);
-      });
-
       if (err) {
-        console.error("Error sending file:", err);
+        console.error("Download error:", err);
         if (!res.headersSent) res.status(500).send("Download failed");
       }
+      fs.unlink(filePath, (unlinkErr) => {
+        if (unlinkErr) console.error("Failed to delete file:", unlinkErr);
+      });
     });
   } catch (error) {
     console.error("yt-dlp error:", error);
