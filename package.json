@@ -1,0 +1,27 @@
+{
+  "name": "youtube-downloader",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shengelaa/Youtube-downloader1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Shengelaa/Youtube-downloader1/issues"
+  },
+  "homepage": "https://github.com/Shengelaa/Youtube-downloader1#readme",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0",
+    "ffmpeg-static": "^5.2.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "ytdl-core-discord": "^1.3.1"
+  }
+}

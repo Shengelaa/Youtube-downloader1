@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>YouTube Downloader</title>
+  </head>
+  <body>
+    <h1>YouTube Downloader</h1>
+    <form id="downloadForm">
+      <input type="text" id="url" placeholder="Enter YouTube URL" required />
+      <select id="format">
+        <option value="mp4">MP4</option>
+        <option value="mp3">MP3</option>
+      </select>
+      <button type="submit">Download</button>
+    </form>
+
+    <script>
+      document
+        .getElementById("downloadForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const url = document.getElementById("url").value;
+          const format = document.getElementById("format").value;
+          window.location.href = `/download?url=${encodeURIComponent(
+            url
+          )}&format=${format}`;
+        });
+    </script>
+  </body>
+</html>
