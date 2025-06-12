@@ -8,6 +8,12 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static("public"));
 
+// Write cookies.txt from env variable if available (e.g. on Railway)
+const cookiePath = path.join(__dirname, "cookies.txt");
+if (process.env.YOUTUBE_COOKIES) {
+  fs.writeFileSync(cookiePath, process.env.YOUTUBE_COOKIES);
+}
+
 app.get("/download", async (req, res) => {
   const { url, format } = req.query;
 
@@ -28,20 +34,26 @@ app.get("/download", async (req, res) => {
         extractAudio: true,
         audioFormat: "mp3",
         output: outputTemplate,
+        cookies: cookiePath,
       });
     } else {
       await ytdlp(url, {
         format: "best",
         output: outputTemplate,
+        cookies: cookiePath,
       });
     }
 
     const downloadedFiles = fs
       .readdirSync(__dirname)
-      .filter((file) => file.startsWith(`download_`) && file.endsWith(format));
+      .filter(
+        (file) => file.startsWith("download_") && file.endsWith("." + format)
+      );
+
     if (downloadedFiles.length === 0) {
       return res.status(500).send("Download failed: file not found");
     }
+
     const downloadedFile = downloadedFiles[0];
     const filePath = path.join(__dirname, downloadedFile);
 
