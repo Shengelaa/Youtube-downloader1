@@ -8,12 +8,20 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static("public"));
 
+const downloadsDir = path.join(__dirname, "downloads");
+if (!fs.existsSync(downloadsDir)) {
+  fs.mkdirSync(downloadsDir);
+}
+
 const cookiesPath = path.join(__dirname, "youtube_cookies.txt");
 
 // On startup, write cookies file if env var exists (base64 decode it first)
 if (process.env.YOUTUBE_COOKIES) {
   try {
-    const decodedCookies = Buffer.from(process.env.YOUTUBE_COOKIES, "base64").toString("utf-8");
+    const decodedCookies = Buffer.from(
+      process.env.YOUTUBE_COOKIES,
+      "base64"
+    ).toString("utf-8");
     fs.writeFileSync(cookiesPath, decodedCookies);
     console.log("✅ Cookies file written successfully");
   } catch (err) {
@@ -32,46 +40,68 @@ app.get("/download", async (req, res) => {
   if (!allowedFormats.includes(format))
     return res.status(400).send("Invalid format");
 
+  // Use a unique filename template with timestamp
+  const timestamp = Date.now();
   const outputTemplate = path.join(
-    __dirname,
-    `download_%(title)s_${Date.now()}.%(ext)s`
+    downloadsDir,
+    `download_%(title)s_${timestamp}.%(ext)s`
   );
 
   try {
+    console.log(`Starting yt-dlp download for URL: ${url} as ${format}`);
+
+    // Run yt-dlp with correct options
     if (format === "mp3") {
       await ytdlp(url, {
         extractAudio: true,
         audioFormat: "mp3",
         output: outputTemplate,
-        cookies: cookiesPath,  // <== Use this instead of args
+        cookies: cookiesPath,
       });
     } else {
       await ytdlp(url, {
-        format: "b", // use 'b' to avoid warning about 'best'
+        format: "b",
         output: outputTemplate,
-        cookies: cookiesPath,  // <== Use this instead of args
+        cookies: cookiesPath,
       });
     }
 
-    const downloadedFiles = fs
-      .readdirSync(__dirname)
-      .filter((file) => file.startsWith(`download_`) && file.endsWith(format));
+    console.log("Download finished, looking for file...");
 
-    if (downloadedFiles.length === 0) {
+    // Find the downloaded file with matching timestamp & extension
+    const files = fs.readdirSync(downloadsDir);
+    const downloadedFile = files.find(
+      (file) => file.includes(timestamp.toString()) && file.endsWith(format)
+    );
+
+    if (!downloadedFile) {
+      console.error("No downloaded file found");
       return res.status(500).send("Download failed: file not found");
     }
 
-    const downloadedFile = downloadedFiles[0];
-    const filePath = path.join(__dirname, downloadedFile);
+    const filePath = path.join(downloadsDir, downloadedFile);
+    console.log("Sending file:", filePath);
 
-    res.download(filePath, downloadedFile, (err) => {
-      if (err) {
-        console.error("Download error:", err);
-        if (!res.headersSent) res.status(500).send("Download failed");
-      }
-      fs.unlink(filePath, (unlinkErr) => {
-        if (unlinkErr) console.error("Failed to delete file:", unlinkErr);
+    // Stream the file for better compatibility
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${downloadedFile}"`
+    );
+    const fileStream = fs.createReadStream(filePath);
+
+    fileStream.pipe(res);
+
+    fileStream.on("end", () => {
+      // Delete file after sending
+      fs.unlink(filePath, (err) => {
+        if (err) console.error("Failed to delete file:", err);
+        else console.log("Deleted file:", downloadedFile);
       });
+    });
+
+    fileStream.on("error", (err) => {
+      console.error("File stream error:", err);
+      if (!res.headersSent) res.status(500).send("Download failed");
     });
   } catch (error) {
     console.error("yt-dlp error:", error);
