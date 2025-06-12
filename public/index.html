@@ -5,7 +5,6 @@
     <title>YouTube Downloader</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-
       * {
         box-sizing: border-box;
       }
@@ -21,22 +20,66 @@
         align-items: center;
         padding: 20px;
       }
-
       .container {
         background: #1e1e1e;
         padding: 30px 25px;
         border-radius: 12px;
         width: 100%;
         max-width: 400px;
-        box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
         text-align: center;
+        position: relative;
+
+        /* Base shadow for depth */
+        box-shadow: 0 8px 24px rgb(0 0 0 / 0.3),
+          0 0 10px 2px rgba(230, 57, 70, 0.6);
+
+        /* subtle neon color overlay */
+        filter: drop-shadow(0 0 8px rgba(230, 57, 70, 0.7));
+
+        animation: led-glow-enhanced 3s ease-in-out infinite alternate;
+      }
+
+      @keyframes led-glow-enhanced {
+        0% {
+          box-shadow: 0 8px 24px rgb(0 0 0 / 0.3),
+            0 0 15px 3px rgba(230, 57, 70, 0.6),
+            0 0 25px 6px rgba(230, 57, 70, 0.4),
+            inset 0 0 10px rgba(230, 57, 70, 0.5);
+          filter: drop-shadow(0 0 8px rgba(230, 57, 70, 0.7));
+        }
+        50% {
+          box-shadow: 0 10px 28px rgb(0 0 0 / 0.35),
+            0 0 30px 8px rgba(230, 57, 70, 0.9),
+            0 0 40px 12px rgba(230, 57, 70, 0.6),
+            inset 0 0 18px rgba(230, 57, 70, 0.8);
+          filter: drop-shadow(0 0 12px rgba(230, 57, 70, 1));
+        }
+        100% {
+          box-shadow: 0 8px 24px rgb(0 0 0 / 0.3),
+            0 0 15px 3px rgba(230, 57, 70, 0.6),
+            0 0 25px 6px rgba(230, 57, 70, 0.4),
+            inset 0 0 10px rgba(230, 57, 70, 0.5);
+          filter: drop-shadow(0 0 8px rgba(230, 57, 70, 0.7));
+        }
       }
 
       h1 {
         margin-bottom: 25px;
         font-weight: 700;
         font-size: 1.8rem;
-        color: #1db954; 
+        color: #e63946; /* reddish */
+      }
+      h3 {
+        margin-bottom: 15px;
+        font-weight: 700;
+        color: #e63946; /* reddish */
+      }
+
+      p {
+        margin-bottom: 25px;
+        font-weight: 600;
+        font-size: 1rem;
+        color: #f28482; /* lighter reddish/pink */
       }
 
       form {
@@ -52,7 +95,7 @@
         border: none;
         border-radius: 8px;
         outline-offset: 2px;
-        outline-color: #1db954;
+        outline-color: #e63946; /* reddish */
         background: #292929;
         color: #f0f0f0;
         transition: background 0.3s ease;
@@ -69,7 +112,7 @@
         font-weight: 600;
         border: none;
         border-radius: 8px;
-        background: #1db954;
+        background: #e63946; /* reddish */
         color: #121212;
         cursor: pointer;
         transition: background 0.3s ease;
@@ -77,7 +120,7 @@
 
       button:hover,
       button:focus {
-        background: #17a94a;
+        background: #b22234; /* darker red */
       }
 
       /* Responsive tweaks */
@@ -95,11 +138,31 @@
           font-size: 1rem;
         }
       }
+
+      /* Glowing text animation */
+      @keyframes text-led-glow {
+        0%,
+        100% {
+          text-shadow: 0 0 2px #e63946, 0 0 4px #e63946, 0 0 6px #b22234;
+          color: #e63946; /* base red */
+        }
+        50% {
+          text-shadow: 0 0 1px #e63946, 0 0 2px #b22234;
+          color: #d94a50; /* slightly dimmer red */
+        }
+      }
+
+      h1,
+      button {
+        animation: text-led-glow 3s ease-in-out infinite alternate;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <h1>YouTube Downloader</h1>
+      <h3>Made By Levan</h3>
+      <p>MP4 || MP3</p>
       <form id="downloadForm">
         <input type="text" id="url" placeholder="Enter YouTube URL" required />
         <select id="format">
