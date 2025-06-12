@@ -4,7 +4,9 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
-const PORT = 3000;
+
+// ✅ Use the dynamic port for Railway or fallback to 3000 locally
+const PORT = process.env.PORT || 3000;
 
 app.use(express.static("public"));
 
@@ -35,5 +37,5 @@ app.get("/download", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });
