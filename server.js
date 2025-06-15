@@ -14,51 +14,50 @@ app.get("/download", async (req, res) => {
   if (!url || !format) return res.status(400).send("Missing parameters");
 
   const allowedFormats = ["mp3", "mp4"];
-  if (!allowedFormats.includes(format))
+  if (!allowedFormats.includes(format)) {
     return res.status(400).send("Invalid format");
+  }
 
-  const outputTemplate = path.join(
-    __dirname,
-    `download_%(title)s_${Date.now()}.%(ext)s`
-  );
+  const ext = format === "mp3" ? "mp3" : "mp4";
+  const contentType = format === "mp3" ? "audio/mpeg" : "video/mp4";
+  const filename = `download.${ext}`;
 
   try {
-    if (format === "mp3") {
-      await ytdlp(url, {
-        extractAudio: true,
-        audioFormat: "mp3",
-        output: outputTemplate,
-      });
-    } else {
-      await ytdlp(url, {
-        format: "best",
-        output: outputTemplate,
-      });
-    }
+    // Set response headers for download
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Type", contentType);
 
-    const downloadedFiles = fs
-      .readdirSync(__dirname)
-      .filter((file) => file.startsWith(`download_`) && file.endsWith(format));
-    if (downloadedFiles.length === 0) {
-      return res.status(500).send("Download failed: file not found");
-    }
-    const downloadedFile = downloadedFiles[0];
-    const filePath = path.join(__dirname, downloadedFile);
-
-    res.download(filePath, downloadedFile, (err) => {
-      if (err) {
-        console.error("Download error:", err);
-        if (!res.headersSent) res.status(500).send("Download failed");
-      }
-      fs.unlink(filePath, (unlinkErr) => {
-        if (unlinkErr) console.error("Failed to delete file:", unlinkErr);
-      });
+    // Start yt-dlp process and pipe directly to response
+    const ytdlpProcess = ytdlp.exec(url, {
+      format: format === "mp3" ? "bestaudio[ext=m4a]/bestaudio" : "bestvideo+bestaudio/best",
+      output: "-", // Output to stdout
+      audioFormat: format === "mp3" ? "mp3" : undefined,
+      extractAudio: format === "mp3",
+      quiet: true,
     });
-  } catch (error) {
-    console.error("yt-dlp error:", error);
+
+    ytdlpProcess.stdout.pipe(res);
+
+    ytdlpProcess.stderr.on("data", (data) => {
+      console.error(`yt-dlp stderr: ${data}`);
+    });
+
+    ytdlpProcess.on("error", (err) => {
+      console.error("yt-dlp process error:", err);
+      if (!res.headersSent) res.status(500).send("Streaming failed");
+    });
+
+    ytdlpProcess.on("close", (code) => {
+      if (code !== 0) {
+        console.error(`yt-dlp exited with code ${code}`);
+      }
+    });
+  } catch (err) {
+    console.error("Streaming error:", err);
     res.status(500).send("Download failed");
   }
 });
+
 
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);

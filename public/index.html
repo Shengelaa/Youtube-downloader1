@@ -178,11 +178,26 @@
         .getElementById("downloadForm")
         .addEventListener("submit", function (e) {
           e.preventDefault();
-          const url = document.getElementById("url").value;
+
+          const url = document.getElementById("url").value.trim();
           const format = document.getElementById("format").value;
-          window.location.href = `/download?url=${encodeURIComponent(
-            url
-          )}&format=${format}`;
+
+          if (!url) {
+            alert("Please enter a valid YouTube URL.");
+            return;
+          }
+
+          const confirmDownload = confirm(
+            `Do you want to download this video as ${format.toUpperCase()}?`
+          );
+
+          if (confirmDownload) {
+            window.location.href = `/download?url=${encodeURIComponent(
+              url
+            )}&format=${format}`;
+          } else {
+            alert("Download cancelled.");
+          }
         });
     </script>
   </body>
