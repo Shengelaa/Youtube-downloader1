@@ -20,17 +20,33 @@ app.get("/download", async (req, res) => {
 
   const ext = format === "mp3" ? "mp3" : "mp4";
   const contentType = format === "mp3" ? "audio/mpeg" : "video/mp4";
-  const filename = `download.${ext}`;
 
   try {
+    // Get video metadata
+    const metadata = await ytdlp(url, {
+      dumpSingleJson: true,
+      noCheckCertificates: true,
+      noWarnings: true,
+      preferFreeFormats: true,
+      youtubeSkipDashManifest: true,
+    });
+
+    const safeTitle = metadata.title
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "_");
+    const filename = `${safeTitle}.${ext}`;
+
     // Set response headers for download
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.setHeader("Content-Type", contentType);
 
     // Start yt-dlp process and pipe directly to response
     const ytdlpProcess = ytdlp.exec(url, {
-      format: format === "mp3" ? "bestaudio[ext=m4a]/bestaudio" : "bestvideo+bestaudio/best",
-      output: "-", // Output to stdout
+      format:
+        format === "mp3"
+          ? "bestaudio[ext=m4a]/bestaudio"
+          : "bestvideo+bestaudio/best",
+      output: "-",
       audioFormat: format === "mp3" ? "mp3" : undefined,
       extractAudio: format === "mp3",
       quiet: true,
@@ -57,7 +73,6 @@ app.get("/download", async (req, res) => {
     res.status(500).send("Download failed");
   }
 });
-
 
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
