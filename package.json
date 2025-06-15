@@ -19,7 +19,6 @@
   "homepage": "https://github.com/Shengelaa/Youtube-downloader1#readme",
   "description": "",
   "dependencies": {
-    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "ffmpeg-static": "^5.2.0",
     "fluent-ffmpeg": "^2.1.3",
