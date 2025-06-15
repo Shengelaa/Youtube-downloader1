@@ -1,10 +1,25 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
+const os = require("os");
 const ytdlp = require("yt-dlp-exec");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const COOKIE_FILE_PATH = path.join(os.tmpdir(), "cookies.txt");
+
+// Write cookie data from env var to temp file on startup
+if (process.env.COOKIES_DATA) {
+  try {
+    fs.writeFileSync(COOKIE_FILE_PATH, process.env.COOKIES_DATA);
+    console.log(`✅ Cookies written to ${COOKIE_FILE_PATH}`);
+  } catch (err) {
+    console.error("❌ Failed to write cookies file:", err);
+  }
+} else {
+  console.warn("⚠️ COOKIES_DATA environment variable not set.");
+}
 
 app.use(express.static("public"));
 
@@ -22,13 +37,14 @@ app.get("/download", async (req, res) => {
   const contentType = format === "mp3" ? "audio/mpeg" : "video/mp4";
 
   try {
-    // Get video metadata
+    // Get metadata using cookies file
     const metadata = await ytdlp(url, {
       dumpSingleJson: true,
       noCheckCertificates: true,
       noWarnings: true,
       preferFreeFormats: true,
       youtubeSkipDashManifest: true,
+      cookiesFromFile: COOKIE_FILE_PATH,
     });
 
     const safeTitle = metadata.title
@@ -36,11 +52,11 @@ app.get("/download", async (req, res) => {
       .replace(/\s+/g, "_");
     const filename = `${safeTitle}.${ext}`;
 
-    // Set response headers for download
+    // Set response headers
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.setHeader("Content-Type", contentType);
 
-    // Start yt-dlp process and pipe directly to response
+    // Start yt-dlp process and stream output
     const ytdlpProcess = ytdlp.exec(url, {
       format:
         format === "mp3"
@@ -50,6 +66,7 @@ app.get("/download", async (req, res) => {
       audioFormat: format === "mp3" ? "mp3" : undefined,
       extractAudio: format === "mp3",
       quiet: true,
+      cookiesFromFile: COOKIE_FILE_PATH,
     });
 
     ytdlpProcess.stdout.pipe(res);
